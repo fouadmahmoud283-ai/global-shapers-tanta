@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sql } from '@/lib/database'
 
+// Force this route to be dynamic and not cached
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function GET() {
+  console.log('Analytics API called at:', new Date().toISOString())
+  
   try {
     // Get all foods with their scan counts
     const foodsResult = await sql`
@@ -53,13 +59,22 @@ export async function GET() {
       count: parseInt(row.count)
     }))
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       foods,
       recentScans,
       totalScans,
       scansByDay,
-      totalFoods: foods.length
+      totalFoods: foods.length,
+      timestamp: new Date().toISOString(), // Add timestamp to ensure unique responses
     })
+
+    // Set cache-busting headers
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    response.headers.set('Surrogate-Control', 'no-store')
+
+    return response
   } catch (error) {
     console.error('Error fetching analytics:', error)
     return NextResponse.json(

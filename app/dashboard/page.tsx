@@ -73,11 +73,18 @@ export default function DashboardPage() {
       setRefreshing(true)
     }
     
+    console.log('Fetching analytics at:', new Date().toISOString())
+    
     try {
-      const response = await fetch('/api/analytics', {
+      // Add timestamp to URL to bypass any caching
+      const timestamp = Date.now()
+      const response = await fetch(`/api/analytics?t=${timestamp}`, {
+        method: 'GET',
         cache: 'no-store', // Ensure fresh data
         headers: {
-          'Cache-Control': 'no-cache',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
       })
       const data = await response.json()
