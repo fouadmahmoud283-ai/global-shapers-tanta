@@ -131,7 +131,7 @@ export default function DashboardPage() {
         <div className="text-center">
           <p className="text-red-600">Error loading analytics data</p>
           <button
-            onClick={fetchAnalytics}
+            onClick={() => fetchAnalytics(true)}
             className="mt-4 btn-primary"
           >
             Retry
