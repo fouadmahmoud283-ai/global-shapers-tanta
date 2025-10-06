@@ -29,8 +29,10 @@ export async function POST(request: NextRequest) {
     const imageUrl = await uploadImageToBlob(image, imageName)
     
     // Create tracking URL (we'll update with real ID after insert)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'https://your-domain.vercel.app'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://food-heritage-tanta-shapers.vercel.app'
     const trackingUrl = `${baseUrl}/track/PLACEHOLDER`
+    
+    console.log(`Using base URL: ${baseUrl}`)
     
     // Generate QR code
     const qrCodeDataUrl = await QRCode.toDataURL(trackingUrl, {
@@ -57,6 +59,8 @@ export async function POST(request: NextRequest) {
     
     // Update tracking URL with real ID
     const realTrackingUrl = `${baseUrl}/track/${food.id}`
+    console.log(`Final tracking URL: ${realTrackingUrl}`)
+    
     await sql`
       UPDATE foods 
       SET tracking_url = ${realTrackingUrl}

@@ -30,6 +30,8 @@ export async function GET(
                request.headers.get('x-real-ip') || 
                'unknown'
 
+    console.log(`Recording scan for food ID: ${foodId}, IP: ${ip}`)
+
     await sql`
       INSERT INTO scans (food_id, ip_address, user_agent)
       VALUES (${foodId}, ${ip}, ${userAgent})
@@ -41,6 +43,8 @@ export async function GET(
       SET scan_count = scan_count + 1 
       WHERE id = ${foodId}
     `
+
+    console.log(`Scan recorded successfully for food ID: ${foodId}`)
 
     // Redirect to Instagram
     return NextResponse.redirect(food.instagram_url)
