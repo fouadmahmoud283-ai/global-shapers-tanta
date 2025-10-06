@@ -19,7 +19,8 @@ import {
   Globe,
   Crown,
   ChefHat,
-  Star
+  Star,
+  RefreshCw
 } from 'lucide-react'
 
 interface Food {
@@ -53,20 +54,40 @@ interface AnalyticsData {
 export default function DashboardPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     fetchAnalytics()
+    
+    // Auto-refresh every 30 seconds to show updated scan counts
+    const interval = setInterval(() => {
+      fetchAnalytics()
+    }, 30000)
+
+    return () => clearInterval(interval)
   }, [])
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setRefreshing(true)
+    }
+    
     try {
-      const response = await fetch('/api/analytics')
+      const response = await fetch('/api/analytics', {
+        cache: 'no-store', // Ensure fresh data
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      })
       const data = await response.json()
       setAnalytics(data)
+      setLastUpdated(new Date())
     } catch (error) {
       console.error('Error fetching analytics:', error)
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
@@ -134,6 +155,30 @@ export default function DashboardPage() {
                 <ArrowLeft className="h-5 w-5 mr-2" />
                 Back to Heritage Hub
               </Link>
+              
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => fetchAnalytics(true)}
+                  disabled={refreshing}
+                  className="flex items-center px-3 py-2 bg-primary-100 hover:bg-primary-200 text-primary-700 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <svg 
+                    className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  {refreshing ? 'Refreshing...' : 'Refresh'}
+                </button>
+                
+                {lastUpdated && (
+                  <span className="text-sm text-gray-500">
+                    Last updated: {lastUpdated.toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
             </div>
             
             <div className="flex items-center">
@@ -166,13 +211,19 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-center">
-              <div className="p-3 bg-primary-100 rounded-xl">
+              <div className="p-3 bg-primary-100 rounded-xl relative">
                 <BarChart3 className="h-7 w-7 text-primary-600" />
+                {refreshing && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                )}
               </div>
               <div className="ml-4">
                 <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Scans</p>
                 <p className="text-3xl font-bold text-gray-900">{analytics.totalScans || 0}</p>
-                <p className="text-xs text-green-600 font-medium">Community Engagement</p>
+                <p className="text-xs text-green-600 font-medium flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></div>
+                  Live Updates Every 30s
+                </p>
               </div>
             </div>
           </div>
